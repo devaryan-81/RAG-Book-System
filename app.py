@@ -1,95 +1,20 @@
 import streamlit as st
-from dotenv import load_dotenv
-import tempfile
 import os
-
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_core.prompts import ChatPromptTemplate
+from dotenv import load_dotenv
 
 load_dotenv()
 
-st.set_page_config(page_title="RAG Book Assistant")
-st.title("📚 RAG Book Assistant")
-st.write("Upload a PDF and ask questions from the document")
+st.title("Debug")
 
-uploaded_file = st.file_uploader("Upload a PDF book", type="pdf")
+mistral_key = os.getenv("MISTRAL_API_KEY")
+st.write("MISTRAL_API_KEY found:", bool(mistral_key))
+st.write("Key preview:", mistral_key[:8] + "..." if mistral_key else "NOT FOUND")
 
-if uploaded_file:
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(uploaded_file.read())
-        file_path = tmp_file.name
-
-    st.success("PDF uploaded successfully!")
-
-    if st.button("Create Vector Database"):
-        with st.spinner("Processing document..."):
-
-            loader = PyPDFLoader(file_path)
-            docs = loader.load()
-
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=200
-            )
-            chunks = splitter.split_documents(docs)
-
-            embeddings = MistralAIEmbeddings(model="mistral-embed")
-
-            vectorstore = Chroma.from_documents(
-                documents=chunks,
-                embedding=embeddings,
-            )
-
-            st.session_state["vectorstore"] = vectorstore
-            st.session_state["embeddings"] = embeddings
-
-        st.success("Vector database created! Now ask a question below.")
-
-if "vectorstore" in st.session_state:
-
-    llm = ChatMistralAI(model="mistral-small-2506")
-
-    prompt = ChatPromptTemplate.from_messages([
-        (
-            "system",
-            """You are a helpful AI assistant.
-
-Use ONLY the provided context to answer the question.
-
-If the answer is not present in the context,
-say: "I could not find the answer in the document."
-"""
-        ),
-        (
-            "human",
-            """Context:
-{context}
-
-Question:
-{question}
-"""
-        )
-    ])
-
-    st.divider()
-    st.subheader("Ask Questions From the Book")
-
-    query = st.text_input("Enter your question")
-
-    if query:
-        retriever = st.session_state["vectorstore"].as_retriever(
-            search_type="mmr",
-            search_kwargs={"k": 4, "fetch_k": 10, "lambda_mult": 0.5}
-        )
-
-        docs = retriever.invoke(query)
-        context = "\n\n".join([doc.page_content for doc in docs])
-
-        final_prompt = prompt.invoke({"context": context, "question": query})
-        response = llm.invoke(final_prompt)
-
-        st.write("### AI Answer")
-        st.write(response.content)
+# Test embedding directly
+try:
+    from langchain_mistralai import MistralAIEmbeddings
+    embeddings = MistralAIEmbeddings(model="mistral-embed")
+    result = embeddings.embed_query("hello world")
+    st.success(f"Embeddings working! Vector length: {len(result)}")
+except Exception as e:
+    st.error(f"Embedding failed: {e}")
