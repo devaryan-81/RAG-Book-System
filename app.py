@@ -48,10 +48,9 @@ if uploaded_file:
             vectorstore = Chroma.from_documents(
                 documents=chunks,
                 embedding=embeddings,
-                persist_directory="chroma_db"
             )
 
-            vectorstore.persist()
+            st.session_state["vectorstore"] = vectorstore
 
         st.success("Vector database created!")
 
