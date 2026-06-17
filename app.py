@@ -1,20 +1,37 @@
 import streamlit as st
+import tempfile
 import os
 from dotenv import load_dotenv
 
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_mistralai import MistralAIEmbeddings
+
 load_dotenv()
 
-st.title("Debug")
+st.title("Debug - PDF Loading")
 
-mistral_key = os.getenv("MISTRAL_API_KEY")
-st.write("MISTRAL_API_KEY found:", bool(mistral_key))
-st.write("Key preview:", mistral_key[:8] + "..." if mistral_key else "NOT FOUND")
+uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
 
-# Test embedding directly
-try:
-    from langchain_mistralai import MistralAIEmbeddings
-    embeddings = MistralAIEmbeddings(model="mistral-embed")
-    result = embeddings.embed_query("hello world")
-    st.success(f"Embeddings working! Vector length: {len(result)}")
-except Exception as e:
-    st.error(f"Embedding failed: {e}")
+if uploaded_file:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        file_path = tmp_file.name
+
+    loader = PyPDFLoader(file_path)
+    docs = loader.load()
+    st.write(f"Pages loaded: {len(docs)}")
+    st.write(f"First page preview: {docs[0].page_content[:200] if docs else 'EMPTY'}")
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    chunks = splitter.split_documents(docs)
+    st.write(f"Chunks created: {len(chunks)}")
+
+    # Filter out empty chunks
+    chunks = [c for c in chunks if c.page_content.strip()]
+    st.write(f"Non-empty chunks: {len(chunks)}")
+
+    if chunks:
+        st.success("PDF loaded correctly!")
+    else:
+        st.error("All chunks are empty — PDF may be scanned/image-based!")
