@@ -4,9 +4,7 @@ A Retrieval-Augmented Generation (RAG) application that allows users to upload P
 
 ## 🚧 Deployment Status
 
-This application is **not deployed yet**.
-
-You can still run it locally on your machine using the instructions below.
+Live Demo : https://rag-book-system-2g6itzlebmfawedq6u5aeh.streamlit.app/
 
 ## ✨ Features
 
