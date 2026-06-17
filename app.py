@@ -43,7 +43,7 @@ if uploaded_file:
 
             chunks = splitter.split_documents(docs)
 
-            embeddings = HuggingFaceEmbeddings()
+            embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
             vectorstore = Chroma.from_documents(
                 documents=chunks,
@@ -58,7 +58,7 @@ if uploaded_file:
 
 if os.path.exists("chroma_db"):
 
-    embeddings = HuggingFaceEmbeddings()
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
     vectorstore = Chroma(
         persist_directory="chroma_db",
