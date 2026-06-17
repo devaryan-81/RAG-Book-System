@@ -9,7 +9,7 @@ from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 load_dotenv()
 
